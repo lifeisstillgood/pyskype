@@ -1,7 +1,24 @@
 import pyskype
+import cmd
 
-p = pyskype.pySkype()
-p.start()
-print p.invoke('GET USERSTATUS')
+class myskype(cmd.Cmd):
+    """Simple command processor example."""
 
-p.close()
+    def preloop(self):
+        self.p = pyskype.pySkype()
+        try:
+            self.p.start()
+        except (KeyboardInterrupt, SystemExit):
+            self.p.close()
+            sys.exit()
+
+    
+    def do_call(self, line):
+        self.p.invoke('CALL %s' % line)
+    
+if __name__ == '__main__':
+    myskype().cmdloop()
+
+
+
+

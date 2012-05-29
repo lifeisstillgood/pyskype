@@ -40,30 +40,17 @@ Basically read the remote dbus.  i have nicked most of that code from Skype4py
 import os
 import sys
 import dbus
-
+import dbus.service
+import time
+import gobject
+from dbus.mainloop.glib import DBusGMainLoop
 
 class pySkypeError(Exception):
     ''' '''
     pass
 
-class SkypeNotify(dbus.service.Object):
 
-    """DBus object which exports a Notify method. This will be called
-    by Skype for all notifications with the notification string as a
-    parameter. The Notify method of this class calls in turn the
-    callable passed to the constructor.
-    """
-
-    def __init__(self, bus):
-        dbus.service.Object.__init__(self, bus, '/com/Skype/Client')
-        print 'Skype notify init done'
-
-    @dbus.service.method(dbus_interface='com.Skype.API.Client')
-    def Notify(self, com):
-        print 'it works, that s what I got from Skype:'
-        print com
-
-class pySkype(Object):
+class pySkype(object):
     '''Create a connection via dbus to Skype, returning a dbus object
     
     self.skypeo is the dbus object, with ability to:
@@ -73,7 +60,8 @@ class pySkype(Object):
     '''
    
     def __init__(self):
-        session_dbus = dbus.SessionBus()
+        #dbus requires this mainloop approach. Cannot be a simple script as I hoped it could be
+        session_dbus = dbus.SessionBus(mainloop=DBusGMainLoop(set_as_default=True))
         try:
             dbus_obj = session_dbus.get_object('com.Skype.API', '/com/Skype')
         except Exception, e: 
@@ -84,13 +72,16 @@ class pySkype(Object):
         resp =  dbus_obj.Invoke('PROTOCOL 7')
         if resp != u'PROTOCOL 7': raise pySkypeError('Failed to register PROTOCOL')
 
-        ### add notify 
-        self.skype_notify = SkypeNotify(dbus_obj)
         self.skypeo = dbus_obj
 
-    def invoke(cmd, *arglist):
+    def invoke(self, cmd, *arglist):
         ''' '''
         fullcmd = '%s %s' % (cmd, ' '.join(arglist))
         resp = self.skypeo.Invoke(fullcmd)
         
-
+if __name__ == '__main__':
+    p = pySkype()
+    #really prone to error but simple for immediate use:
+    args = ' '.join(sys.argv[1:])
+    # python simplepySkype.py CALL +447540456115
+    p.invoke(args)
