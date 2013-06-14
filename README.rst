@@ -1,3 +1,5 @@
+:desc: automating skype on Linux
+
 =======
 PySkype
 =======
